@@ -16,22 +16,21 @@ def stream_users_in_batches(batch_size):
         list: Batch of user dictionaries
     """
     connection = seed.connect_to_prodev()
-    if connection:
-        cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM user_data")
-        
-        batch = []
-        for row in cursor:
-            batch.append(row)
-            if len(batch) == batch_size:
-                yield batch
-                batch = []
-        
-        if batch:
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM user_data")
+    
+    batch = []
+    for row in cursor:
+        batch.append(row)
+        if len(batch) == batch_size:
             yield batch
-        
-        cursor.close()
-        connection.close()
+            batch = []
+    
+    if batch:
+        yield batch
+    
+    cursor.close()
+    connection.close()
 
 
 def batch_processing(batch_size):
