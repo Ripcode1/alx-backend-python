@@ -5,12 +5,12 @@ Batch processing module for filtering users by age
 import seed
 
 
-def stream_users_in_batches(batch_size):
+def streamusersinbatches(batchsize):
     """
     Generator that fetches rows in batches from the database
     
     Args:
-        batch_size: Number of rows to fetch per batch
+        batchsize: Number of rows to fetch per batch
         
     Yields:
         list: Batch of user dictionaries
@@ -23,7 +23,7 @@ def stream_users_in_batches(batch_size):
         batch = []
         for row in cursor:
             batch.append(row)
-            if len(batch) == batch_size:
+            if len(batch) == batchsize:
                 yield batch
                 batch = []
         
@@ -34,14 +34,14 @@ def stream_users_in_batches(batch_size):
         connection.close()
 
 
-def batch_processing(batch_size):
+def batch_processing(batchsize):
     """
     Processes each batch to filter users over the age of 25
     
     Args:
-        batch_size: Size of each batch to process
+        batchsize: Size of each batch to process
     """
-    for batch in stream_users_in_batches(batch_size):
+    for batch in streamusersinbatches(batchsize):
         for user in batch:
             if user['age'] > 25:
                 print(user)
