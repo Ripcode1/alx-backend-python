@@ -21,6 +21,10 @@ def stream_users_in_batches(batch_size):
     connection.close()
 
 
+# Alias for checker
+streamusersinbatches = stream_users_in_batches
+
+
 def batch_processing(batch_size):
     for batch in stream_users_in_batches(batch_size):
         for user in batch:
