@@ -1,7 +1,6 @@
-python#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 URL configuration for messaging_app project.
-
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.2/topics/http/urls/
 Examples:
