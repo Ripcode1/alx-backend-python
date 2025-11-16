@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """URL configuration for the chats application."""
 from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from rest_framework import routers
 from .views import UserViewSet, ConversationViewSet, MessageViewSet
 
 # Create a router and register our viewsets with it
-router = DefaultRouter()
+router = routers.DefaultRouter()
 
 # Register viewsets
 router.register(r'users', UserViewSet, basename='user')
