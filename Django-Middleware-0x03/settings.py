@@ -33,7 +33,7 @@ MIDDLEWARE = [
     'chats.middleware.RequestLoggingMiddleware',
     'chats.middleware.RestrictAccessByTimeMiddleware',
     'chats.middleware.OffensiveLanguageMiddleware',
-    'chats.middleware.RolePermissionMiddleware',
+    'chats.middleware.RolepermissionMiddleware',
 ]
 
 ROOT_URLCONF = 'messaging_app.urls'
@@ -118,31 +118,3 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'user_id',
     'USER_ID_CLAIM': 'user_id',
 }
-```
-
-## 0x03-MessagingApp-Django/requests.log
-
-Create a file with at least one log entry:
-```
-2025-11-23 14:58:18 - User: Anonymous - Path: /api/conversations/
-```
-
-**Key Points:**
-1. ✅ Directory must be named `0x03-MessagingApp-Django` (not `Django-Middleware-0x03`)
-2. ✅ `settings.py` must be at root level: `0x03-MessagingApp-Django/settings.py`
-3. ✅ `middleware.py` contains `class RequestLoggingMiddleware`, `def __init__`, and `def __call__`
-4. ✅ `requests.log` must exist and not be empty
-5. ✅ Middleware is configured in `settings.py` MIDDLEWARE list
-
-Make sure your directory structure looks like:
-```
-0x03-MessagingApp-Django/
-├── settings.py
-├── urls.py
-├── requests.log
-├── chats/
-│   ├── middleware.py
-│   ├── models.py
-│   ├── views.py
-│   └── ...
-└── manage.py
