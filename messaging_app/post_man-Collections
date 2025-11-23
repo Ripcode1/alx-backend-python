@@ -538,4 +538,256 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{
+							"raw": "{{base_url}}/api/messages/{{message_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "{{message_id}}", ""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Message (Sender Only)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Message updated successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message_body).to.include('Updated');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message_body\": \"Updated: Hello! This is an updated test message.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/{{message_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "{{message_id}}", ""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Messages by Conversation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Filtered messages returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.results).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/messages/?conversation={{conversation_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", ""],
+							"query": [
+								{
+									"key": "conversation",
+									"value": "{{conversation_id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Messages by Time Range",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Time-filtered messages returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.results).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/messages/?sent_after=2024-01-01T00:00:00Z&sent_before=2025-12-31T23:59:59Z",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", ""],
+							"query": [
+								{
+									"key": "sent_after",
+									"value": "2024-01-01T00:00:00Z"
+								},
+								{
+									"key": "sent_before",
+									"value": "2025-12-31T23:59:59Z"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Message (Sender Only)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/messages/{{message_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "{{message_id}}", ""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unauthorized User Send Message",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 403\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user2_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"conversation\": \"{{conversation_id}}\",\n    \"message_body\": \"This should fail - User 2 is not a participant\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", ""]
+						},
+						"description": "User 2 trying to send message to User 1's private conversation"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refresh_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user2_access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "conversation_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "message_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
