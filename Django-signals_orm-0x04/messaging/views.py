@@ -73,7 +73,7 @@ def inbox(request):
     user = request.user
     
     # Get unread messages using custom manager
-    unread_messages = Message.unread_objects.unread_for_user(user)
+    unread_messages = Message.unread.unread_for_user(user)
     
     # Get all received messages with optimization
     all_messages = Message.objects.filter(
