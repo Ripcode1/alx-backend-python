@@ -15,15 +15,17 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-# Install necessary dependencies from the Requirements.txt
-COPY Requirements.txt /app/Requirements.txt
-RUN pip install --upgrade pip
-RUN pip install -r Requirements.txt
+# Copy requirements.txt file
+COPY requirements.txt /app/
+
+# Install necessary dependencies from the requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Copy your app code into the container
 COPY . /app/
 
 # Expose the port your Django app runs on (default is 8000)
+# To run: docker run -p 8000:8000 messaging-app
 EXPOSE 8000
 
 # Run the application
