@@ -1,4 +1,4 @@
-# Use Python 3.10 as base image
+# Use a base Python image python:3.10
 FROM python:3.10
 
 # Set environment variables
@@ -15,18 +15,16 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements file
-COPY requirements.txt /app/
-
-# Install Python dependencies
+# Install necessary dependencies from the Requirements.txt
+COPY Requirements.txt /app/Requirements.txt
 RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN pip install -r Requirements.txt
 
-# Copy project files
+# Copy your app code into the container
 COPY . /app/
 
-# Expose port 8000
+# Expose the port your Django app runs on (default is 8000)
 EXPOSE 8000
 
-# Run migrations and start server
-CMD ["sh", "-c", "python3 manage.py migrate && python3 manage.py runserver 0.0.0.0:8000"]
+# Run the application
+CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
