@@ -1,0 +1,102 @@
+#!/bin/bash
+
+# kubctl-0x01 - Scale Django App and Monitor Resources
+# This script scales the Django deployment to 3 replicas and performs load testing
+
+echo "=========================================="
+echo "Kubernetes Scaling and Monitoring Script"
+echo "=========================================="
+
+# Check if kubectl is available
+if ! command -v kubectl &> /dev/null; then
+    echo "Error: kubectl is not installed."
+    exit 1
+fi
+
+echo ""
+echo "Step 1: Scaling Django app deployment to 3 replicas..."
+kubectl scale deployment django-messaging-app --replicas=3
+
+if [ $? -eq 0 ]; then
+    echo "✓ Deployment scaled successfully"
+else
+    echo "✗ Failed to scale deployment"
+    exit 1
+fi
+
+# Wait for pods to be ready
+echo ""
+echo "Waiting for pods to be ready..."
+sleep 10
+
+echo ""
+echo "Step 2: Verifying multiple pods are running..."
+kubectl get pods -l app=django-messaging
+
+# Count running pods
+RUNNING_PODS=$(kubectl get pods -l app=django-messaging --field-selector=status.phase=Running --no-headers | wc -l)
+echo ""
+echo "Number of running pods: $RUNNING_PODS"
+
+echo ""
+echo "Step 3: Checking pod details..."
+kubectl describe pods -l app=django-messaging
+
+echo ""
+echo "Step 4: Performing load testing with wrk..."
+echo "Note: Ensure wrk is installed (sudo apt-get install wrk)"
+
+# Get the service endpoint
+SERVICE_IP=$(minikube ip)
+SERVICE_PORT=$(kubectl get service django-messaging-service -o jsonpath='{.spec.ports[0].nodePort}')
+
+# If using ClusterIP, we need to use port-forward
+echo "Setting up port-forward to access the service..."
+kubectl port-forward service/django-messaging-service 8080:80 &
+PORT_FORWARD_PID=$!
+sleep 5
+
+if command -v wrk &> /dev/null; then
+    echo "Running wrk load test (10 seconds, 2 threads, 10 connections)..."
+    wrk -t2 -c10 -d10s http://localhost:8080/
+else
+    echo "wrk is not installed. Skipping load test."
+    echo "Install with: sudo apt-get install wrk"
+    echo "Performing simple curl test instead..."
+    for i in {1..10}; do
+        echo "Request $i:"
+        curl -s -o /dev/null -w "HTTP Status: %{http_code}, Time: %{time_total}s\n" http://localhost:8080/
+        sleep 1
+    done
+fi
+
+# Kill port-forward
+kill $PORT_FORWARD_PID 2>/dev/null
+
+echo ""
+echo "Step 5: Monitoring Resource Usage..."
+echo "Note: Metrics server must be enabled (minikube addons enable metrics-server)"
+
+# Enable metrics server if not enabled
+minikube addons enable metrics-server
+sleep 15
+
+echo ""
+echo "Pod Resource Usage:"
+kubectl top pods -l app=django-messaging
+
+echo ""
+echo "Node Resource Usage:"
+kubectl top nodes
+
+echo ""
+echo "=========================================="
+echo "Deployment Information:"
+kubectl get deployment django-messaging-app
+echo ""
+echo "Service Information:"
+kubectl get service django-messaging-service
+echo ""
+echo "=========================================="
+echo "Scaling and Monitoring Complete!"
+echo "=========================================="
