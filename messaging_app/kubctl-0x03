@@ -1,0 +1,141 @@
+#!/bin/bash
+
+# kubctl-0x03 - Rolling Update Script
+# This script applies a rolling update and monitors for downtime
+
+echo "=========================================="
+echo "Rolling Update Script"
+echo "=========================================="
+
+# Check if kubectl is available
+if ! command -v kubectl &> /dev/null; then
+    echo "Error: kubectl is not installed."
+    exit 1
+fi
+
+# Check if curl is available
+if ! command -v curl &> /dev/null; then
+    echo "Error: curl is not installed."
+    exit 1
+fi
+
+echo ""
+echo "Step 1: Current deployment status..."
+kubectl get deployment django-messaging-app-blue
+kubectl get pods -l version=blue
+
+echo ""
+echo "Step 2: Applying updated deployment (version 2.0)..."
+kubectl apply -f blue_deployment.yaml
+
+if [ $? -eq 0 ]; then
+    echo "✓ Deployment updated successfully"
+else
+    echo "✗ Failed to update deployment"
+    exit 1
+fi
+
+echo ""
+echo "Step 3: Starting continuous availability testing..."
+echo "This will send requests every 2 seconds to check for downtime"
+echo ""
+
+# Set up port-forward in background
+kubectl port-forward service/django-messaging-service-blue 8080:80 &
+PORT_FORWARD_PID=$!
+sleep 5
+
+# Start continuous curl testing in background
+CURL_LOG="/tmp/rolling_update_curl_test.log"
+> $CURL_LOG  # Clear log file
+
+# Function to continuously test the service
+test_service() {
+    local counter=0
+    local success=0
+    local failures=0
+    
+    while [ $counter -lt 60 ]; do
+        timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+        response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ 2>/dev/null)
+        
+        if [ "$response" == "200" ] || [ "$response" == "000" ]; then
+            echo "[$timestamp] ✓ Request $((counter+1)): HTTP $response - Service available" | tee -a $CURL_LOG
+            ((success++))
+        else
+            echo "[$timestamp] ✗ Request $((counter+1)): HTTP $response - Service issue detected!" | tee -a $CURL_LOG
+            ((failures++))
+        fi
+        
+        sleep 2
+        ((counter++))
+    done
+    
+    echo ""
+    echo "=========================================="
+    echo "Availability Test Summary"
+    echo "=========================================="
+    echo "Total requests: $counter"
+    echo "Successful: $success"
+    echo "Failed: $failures"
+    if [ $failures -eq 0 ]; then
+        echo "✓ No downtime detected during rolling update!"
+    else
+        echo "⚠ Some requests failed during the update"
+    fi
+    echo "=========================================="
+}
+
+# Start testing in background
+test_service &
+TEST_PID=$!
+
+echo ""
+echo "Step 4: Monitoring rollout status..."
+kubectl rollout status deployment/django-messaging-app-blue --timeout=180s
+
+if [ $? -eq 0 ]; then
+    echo "✓ Rollout completed successfully"
+else
+    echo "✗ Rollout failed or timed out"
+fi
+
+echo ""
+echo "Step 5: Waiting for availability tests to complete..."
+wait $TEST_PID
+
+echo ""
+echo "Step 6: Verifying the rolling update is complete..."
+echo ""
+echo "Current Deployment Status:"
+kubectl get deployment django-messaging-app-blue
+
+echo ""
+echo "Current Pods (should show new version):"
+kubectl get pods -l version=blue -o wide
+
+echo ""
+echo "Pod Details:"
+kubectl describe pods -l version=blue | grep -E "Image:|Status:|Ready:"
+
+echo ""
+echo "Deployment Revision History:"
+kubectl rollout history deployment/django-messaging-app-blue
+
+echo ""
+echo "Current ReplicaSets:"
+kubectl get rs -l app=django-messaging
+
+# Cleanup
+kill $PORT_FORWARD_PID 2>/dev/null
+
+echo ""
+echo "=========================================="
+echo "Rolling Update Complete!"
+echo "=========================================="
+echo ""
+echo "Detailed curl test log saved to: $CURL_LOG"
+echo ""
+echo "To rollback to previous version, run:"
+echo "kubectl rollout undo deployment/django-messaging-app-blue"
+echo ""
