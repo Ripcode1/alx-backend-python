@@ -1,1 +1,35 @@
+# Commands for Setting Up Kubernetes Ingress
 
+# Step 1: Enable Nginx Ingress Controller in Minikube
+minikube addons enable ingress
+
+# Step 2: Verify Ingress Controller is Running
+kubectl get pods -n ingress-nginx
+
+# Step 3: Apply the Ingress Configuration
+kubectl apply -f ingress.yaml
+
+# Step 4: Verify Ingress Resource is Created
+kubectl get ingress
+
+# Step 5: Describe Ingress for Details
+kubectl describe ingress django-messaging-ingress
+
+# Step 6: Get Minikube IP (for accessing the app)
+minikube ip
+
+# Step 7: Add hostname to /etc/hosts (replace <MINIKUBE_IP> with actual IP)
+# echo "<MINIKUBE_IP> django-messaging.local" | sudo tee -a /etc/hosts
+
+# Step 8: Test the Ingress (after updating /etc/hosts)
+# curl http://django-messaging.local
+# curl http://django-messaging.local/api
+
+# Alternative: Test using Minikube IP directly
+# curl http://<MINIKUBE_IP>
+
+# Step 9: Watch Ingress Events
+kubectl get events --sort-by='.lastTimestamp' | grep ingress
+
+# Step 10: Check Ingress Logs (if needed for debugging)
+kubectl logs -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx
