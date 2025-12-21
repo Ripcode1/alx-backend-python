@@ -9,7 +9,6 @@ pipeline {
     }
 
     stages {
-        // Task 0: Pull source code from GitHub
         stage('Clone Repository') {
             steps {
                 echo 'Cloning the repository...'
@@ -19,42 +18,35 @@ pipeline {
             }
         }
 
-        // Task 0: Install dependencies
         stage('Install Dependencies') {
             steps {
                 echo 'Installing dependencies...'
-                dir('messaging_app') {
-                    sh '''
-                        python3 -m venv venv
-                        . venv/bin/activate
-                        pip install --upgrade pip
-                        pip install -r requirements.txt
-                        pip install pytest pytest-django pytest-cov
-                    '''
-                }
+                sh '''
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip3 install --upgrade pip
+                    pip3 install -r messaging_app/requirements.txt
+                    pip3 install pytest pytest-django pytest-cov
+                '''
             }
         }
 
-        // Task 0: Run tests using pytest
         stage('Run Tests') {
             steps {
                 echo 'Running tests with pytest...'
-                dir('messaging_app') {
-                    sh '''
-                        . venv/bin/activate
-                        pytest --junitxml=reports/test-results.xml --cov=. --cov-report=xml:reports/coverage.xml --cov-report=html:reports/coverage-html -v
-                    '''
-                }
+                sh '''
+                    . venv/bin/activate
+                    pytest --junitxml=reports/test-results.xml --cov=. --cov-report=xml:reports/coverage.xml --cov-report=html:reports/coverage-html -v
+                '''
             }
             post {
                 always {
-                    // Task 0: Generate test report
-                    junit 'messaging_app/reports/test-results.xml'
+                    junit 'reports/test-results.xml'
                     publishHTML(target: [
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
-                        reportDir: 'messaging_app/reports/coverage-html',
+                        reportDir: 'reports/coverage-html',
                         reportFiles: 'index.html',
                         reportName: 'Coverage Report'
                     ])
@@ -62,20 +54,16 @@ pipeline {
             }
         }
 
-        // Task 1: Build Docker image
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image...'
-                dir('messaging_app') {
-                    sh '''
-                        docker build -t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} .
-                        docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_NAME}:latest
-                    '''
-                }
+                sh '''
+                    docker build -t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} .
+                    docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_NAME}:latest
+                '''
             }
         }
 
-        // Task 1: Push Docker image to Docker Hub
         stage('Push to Docker Hub') {
             steps {
                 echo 'Pushing Docker image to Docker Hub...'
@@ -87,7 +75,6 @@ pipeline {
             }
         }
 
-        // Cleanup stage
         stage('Cleanup') {
             steps {
                 echo 'Cleaning up...'
